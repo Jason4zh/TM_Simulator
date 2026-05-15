@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>图灵机模拟器 v2.1 Pro</title>
+    <title>图灵机模拟器</title>
     <style>
         :root {
             --primary: #2196F3;
@@ -12,111 +12,96 @@
         }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; flex-direction: column; height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; }
         
-        /* 控制栏 */
         .top-bar { display: flex; gap: 12px; align-items: center; background: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; flex-wrap: wrap; }
         
         .main-layout { display: flex; gap: 20px; flex: 1; min-height: 0; }
         
-        /* 规则表格：纵向布局 */
-        .rules-panel { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 480px; overflow-y: auto; display: flex; flex-direction: column; }
-        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
-        th, td { border: 1px solid #eee; padding: 6px; text-align: center; overflow: hidden; }
+        /* 规则面板 */
+        .rules-panel { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 420px; overflow-y: auto; display: flex; flex-direction: column; }
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; margin-bottom: 15px; }
+        th, td { border: 1px solid #eee; padding: 6px; text-align: center; }
         th { background: #fcfcfc; color: #666; font-size: 13px; }
         .state-row-head { background: #f0f7ff; font-weight: bold; width: 60px; }
-        .rule-cell { cursor: pointer; transition: 0.2s; position: relative; }
-        .rule-cell:hover { background: #f1f8ff; }
         .rule-active { background: var(--active-row) !important; outline: 2px solid #ffd54f; z-index: 1; }
         
         .cell-edit-box { display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
-        .cell-edit-box input, .cell-edit-box select { border: 1px solid #ddd; border-radius: 3px; padding: 2px; }
+        .cell-edit-box select, .cell-edit-box input { border: 1px solid #ddd; border-radius: 3px; padding: 2px; }
+
+        /* 模板中心 */
+        .template-section { border-top: 2px dashed #eee; padding-top: 15px; }
+        .template-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-tmpl { background: #f1f3f4; color: #3c4043; border: 1px solid #dadce0; padding: 6px; font-size: 12px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .btn-tmpl:hover { background: #e8eaed; border-color: #bdc1c6; }
 
         /* 右侧展示 */
         .display-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; min-width: 0; }
-        
-        /* 纸带逻辑 */
-        .tape-window { 
-            height: 110px; background: #1a1a1a; border-radius: 12px; position: relative; 
-            overflow: hidden; display: flex; align-items: center; justify-content: center;
-        }
-        .tape-track { display: flex; position: absolute; will-change: transform; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .tape-cell { 
-            width: 50px; height: 50px; background: #333; color: #fff; border: 1px solid #444;
-            display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; flex-shrink: 0; box-sizing: border-box;
-        }
-        .static-head {
-            position: absolute; width: 52px; height: 52px; border: 3px solid var(--head-color);
-            border-radius: 6px; z-index: 10; pointer-events: none; box-shadow: 0 0 20px rgba(255,87,34,0.5);
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .head-info { position: absolute; top: -32px; background: var(--head-color); color: white; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; white-space: nowrap; }
+        .tape-window { height: 110px; background: #1a1a1a; border-radius: 12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .tape-track { display: flex; position: absolute; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .tape-cell { width: 50px; height: 50px; background: #333; color: #fff; border: 1px solid #444; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; flex-shrink: 0; box-sizing: border-box; }
+        .static-head { position: absolute; width: 52px; height: 52px; border: 3px solid var(--head-color); border-radius: 6px; z-index: 10; pointer-events: none; box-shadow: 0 0 20px rgba(255,87,34,0.5); }
+        .head-info { position: absolute; top: -32px; left: 50%; transform: translateX(-50%); background: var(--head-color); color: white; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; white-space: nowrap; }
 
-        /* 时空图滚动 */
-        .history-window { 
-            flex: 1; background: #000; border-radius: 12px; 
-            overflow: auto; /* 同时支持上下左右滑动 */
-            position: relative; border: 2px solid #333;
-        }
-        canvas { cursor: crosshair; display: block; }
+        .history-window { flex: 1; background: #000; border-radius: 12px; overflow: auto; position: relative; border: 2px solid #333; }
+        canvas { display: block; }
 
-        /* 通用组件 */
         .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; background: var(--primary); color: white; font-weight: 500; transition: 0.2s; }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:hover { opacity: 0.9; }
         .btn-secondary { background: #607d8b; }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
-        .btn-danger { background: #ff5252; padding: 4px 8px; font-size: 11px; }
+        .btn-danger { background: #ff5252; padding: 4px 8px; font-size: 11px; margin-top: 4px; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <h2 style="margin:0; font-size:1.2rem; color:#333;">TM Simulator</h2>
+    <h2 style="margin:0; font-size:1.2rem;">TM Simulator</h2>
     <button class="btn" id="btnPlay">播放</button>
-    <button class="btn btn-outline" id="btnStep">单步</button>
     <button class="btn btn-secondary" id="btnReset">重置</button>
-    <button class="btn btn-outline" style="margin-left:10px" id="btnExport">导出图像</button>
+    <button class="btn" style="background:#4caf50" id="btnExport">导出图像</button>
     
-    <div style="display:flex; align-items:center; gap:8px; margin-left:15px; border-left:1px solid #eee; padding-left:15px">
+    <div style="margin-left:15px; border-left:1px solid #eee; padding-left:15px">
         <span style="font-size:13px; color:#666">速度:</span>
-        <input type="range" id="speedRange" min="10" max="1000" value="300" style="direction: rtl;">
+        <input type="range" id="speedRange" min="10" max="1000" value="700" style="direction: rtl;">
     </div>
     
     <div style="margin-left:auto; display:flex; gap:15px; font-size:14px">
-        <span>当前状态: <b id="displayState" style="color:var(--head-color)">-</b></span>
+        <span>状态: <b id="displayState" style="color:var(--head-color)">-</b></span>
         <span>步数: <b id="displaySteps">0</b></span>
     </div>
 </div>
 
 <div class="main-layout">
-    <!-- 左侧：纵向转移矩阵 -->
     <div class="rules-panel">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
-            <h4 style="margin:0">转移矩阵 (状态 \ 符号)</h4>
-            <button class="btn" style="background:#4caf50; padding:4px 10px; font-size:12px" onclick="addState()">+ 增加状态</button>
+            <h4 style="margin:0">转移矩阵</h4>
+            <button class="btn" style="background:#4caf50; padding:4px 10px; font-size:12px" onclick="addState()">+ 状态</button>
         </div>
         <table id="ruleTable">
             <thead>
                 <tr>
-                    <th style="width:70px">状态 \ 符</th>
+                    <th style="width:60px">状 \ 符</th>
                     <th>符号 "0"</th>
                     <th>符号 "1"</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
         </table>
-        <div style="margin-top:auto; padding-top:15px; border-top:1px solid #eee; font-size:12px; color:#888">
-            * 自动保存至本地存储 | 状态 "H" 视为停机
+
+        <!-- 模板中心 -->
+        <div class="template-section">
+            <h4 style="margin:0 0 10px 0; color:#555">常用模板库</h4>
+            <div class="template-grid" id="templateGrid">
+                <!-- 按钮由 JS 生成 -->
+            </div>
         </div>
     </div>
 
-    <!-- 右侧：可视化 -->
     <div class="display-panel">
         <div class="tape-window">
             <div class="static-head">
-                <div class="head-info" id="headStateLabel">State: A</div>
+                <div class="head-info" id="headStateLabel">状态: A</div>
             </div>
             <div class="tape-track" id="tapeTrack"></div>
         </div>
-        
         <div class="history-window" id="historyWrapper">
             <canvas id="historyCanvas"></canvas>
         </div>
@@ -124,11 +109,52 @@
 </div>
 
 <script>
-    // --- 核心状态 ---
+    // --- 模板数据定义 ---
+    const TM_TEMPLATES = {
+        "BB1 (Busy Beaver)": { states: ['A'], rules: { 'A': {'0':{w:'1',m:'R',next:'H'}, '1':{w:'1',m:'L',next:'H'}} } },
+        "BB2 (Busy Beaver)": { states: ['A','B'], rules: { 
+            'A':{'0':{w:'1',m:'R',next:'B'},'1':{w:'1',m:'L',next:'B'}},
+            'B':{'0':{w:'1',m:'L',next:'A'},'1':{w:'1',m:'R',next:'H'}} 
+        }},
+        "BB3 (Busy Beaver)": { states: ['A','B','C'], rules: {
+            'A':{'0':{w:'1',m:'R',next:'B'},'1':{w:'1',m:'H',next:'H'}},
+            'B':{'0':{w:'0',m:'R',next:'C'},'1':{w:'1',m:'R',next:'B'}},
+            'C':{'0':{w:'1',m:'L',next:'C'},'1':{w:'1',m:'L',next:'A'}}
+        }},
+        "BB4 (Busy Beaver)": { states: ['A','B','C','D'], rules: {
+            'A':{'0':{w:'1',m:'R',next:'B'},'1':{w:'1',m:'L',next:'B'}},
+            'B':{'0':{w:'1',m:'L',next:'A'},'1':{w:'0',m:'L',next:'C'}},
+            'C':{'0':{w:'1',m:'R',next:'H'},'1':{w:'1',m:'L',next:'D'}},
+            'D':{'0':{w:'1',m:'R',next:'D'},'1':{w:'0',m:'R',next:'A'}}
+        }},
+        "二进制计数器": { states: ['A','B'], rules: {
+            'A':{'0':{w:'1',m:'L',next:'B'},'1':{w:'0',m:'L',next:'A'}},
+            'B':{'0':{w:'0',m:'R',next:'B'},'1':{w:'1',m:'R',next:'B'}}
+        }},
+        "二进制加一 (Increment)": { states: ['A','B'], rules: {
+            'A':{'0':{w:'1',m:'L',next:'B'},'1':{w:'0',m:'L',next:'A'}},
+            'B':{'0':{w:'0',m:'L',next:'B'},'1':{w:'1',m:'L',next:'B'}}
+        }},
+        "0-1 翻转填充器": { states: ['A'], rules: {
+            'A':{'0':{w:'1',m:'R',next:'A'},'1':{w:'0',m:'R',next:'A'}}
+        }},
+        "右移复制 (Copy)": { states: ['A','B','C'], rules: {
+            'A':{'0':{w:'0',m:'R',next:'A'},'1':{w:'0',m:'R',next:'B'}},
+            'B':{'0':{w:'1',m:'R',next:'C'},'1':{w:'1',m:'R',next:'B'}},
+            'C':{'0':{w:'1',m:'L',next:'A'},'1':{w:'1',m:'L',next:'A'}}
+        }},
+        "交替填充 0101": { states: ['A','B'], rules: {
+            'A':{'0':{w:'1',m:'R',next:'B'},'1':{w:'1',m:'R',next:'B'}},
+            'B':{'0':{w:'0',m:'R',next:'A'},'1':{w:'0',m:'R',next:'A'}}
+        }},
+        "向左搜索 1": { states: ['A'], rules: {
+            'A':{'0':{w:'0',m:'L',next:'A'},'1':{w:'1',m:'H',next:'H'}}
+        }}
+    };
+
     let states = ['A', 'B', 'C', 'D'];
     const symbols = ['0', '1'];
     let rules = {}; 
-
     let tape = {};
     let headPos = 0;
     let currentState = 'A';
@@ -138,57 +164,49 @@
 
     const canvas = document.getElementById('historyCanvas');
     const ctx = canvas.getContext('2d');
-    const BOX = 8; // 时空图像素单位
-    const TAPE_LIMIT = 100; // 时空图纵向展现的纸带半径（格）
+    const BOX = 8;
+    const TAPE_LIMIT = 80;
 
-    // --- 初始化与存储 ---
     function init() {
         loadFromLocal();
         renderTable();
+        renderTemplateButtons();
         resetMachine();
 
         document.getElementById('btnPlay').onclick = togglePlay;
-        document.getElementById('btnStep').onclick = step;
         document.getElementById('btnReset').onclick = resetMachine;
         document.getElementById('btnExport').onclick = exportHistory;
-        
-        // 自动保存监听
-        window.addEventListener('beforeunload', saveToLocal);
     }
 
-    function saveToLocal() {
-        localStorage.setItem('tm_data_v2', JSON.stringify({ states, rules }));
-    }
-
-    function loadFromLocal() {
-        const saved = localStorage.getItem('tm_data_v2');
-        if (saved) {
-            const data = JSON.parse(saved);
-            states = data.states;
-            rules = data.rules;
-        } else {
-            // 默认加载 BB4 
-            const bb4 = [
-                ['A','0','1','R','B'], ['A','1','1','L','B'],
-                ['B','0','1','L','A'], ['B','1','0','L','C'],
-                ['C','0','1','R','H'], ['C','1','1','L','D'],
-                ['D','0','1','R','D'], ['D','1','0','R','A']
-            ];
-            bb4.forEach(r => {
-                if(!rules[r[0]]) rules[r[0]] = {};
-                rules[r[0]][r[1]] = { w: r[2], m: r[3], next: r[4] };
-            });
+    // --- 模板渲染 ---
+    function renderTemplateButtons() {
+        const grid = document.getElementById('templateGrid');
+        grid.innerHTML = '';
+        for (let name in TM_TEMPLATES) {
+            const btn = document.createElement('button');
+            btn.className = 'btn-tmpl';
+            btn.textContent = name;
+            btn.onclick = () => loadTemplate(name);
+            grid.appendChild(btn);
         }
     }
 
-    // --- 矩阵交互 (纵向) ---
+    function loadTemplate(name) {
+        const tm = TM_TEMPLATES[name];
+        states = [...tm.states];
+        rules = JSON.parse(JSON.stringify(tm.rules));
+        saveToLocal();
+        renderTable();
+        resetMachine();
+    }
+
+    // --- 矩阵渲染 ---
     function renderTable() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = states.map(s => `
             <tr id="row-${s}">
                 <td class="state-row-head">
-                    ${s}
-                    <button class="btn-danger" onclick="delState('${s}')">×</button>
+                    ${s}<br><button class="btn-danger" onclick="delState('${s}')">×</button>
                 </td>
                 ${symbols.map(sym => {
                     const r = (rules[s] && rules[s][sym]) ? rules[s][sym] : {w:sym, m:'R', next:s};
@@ -196,12 +214,15 @@
                     return `
                         <td class="rule-cell" id="td-${s}-${sym}">
                             <div class="cell-edit-box">
-                                <span>写:<input type="text" maxlength="1" value="${r.w}" onchange="updateRule('${s}','${sym}','w',this.value)"></span>
-                                <span>移:<select onchange="updateRule('${s}','${sym}','m',this.value)">
-                                    <option value="R" ${r.m==='R'?'selected':''}>R</option>
-                                    <option value="L" ${r.m==='L'?'selected':''}>L</option>
+                                <span>写: <select onchange="updateRule('${s}','${sym}','w',this.value)">
+                                    <option value="0" ${r.w==='0'?'selected':''}>0</option>
+                                    <option value="1" ${r.w==='1'?'selected':''}>1</option>
                                 </select></span>
-                                <span>进:<input type="text" maxlength="3" value="${r.next}" onchange="updateRule('${s}','${sym}','next',this.value)"></span>
+                                <span>移: <select onchange="updateRule('${s}','${sym}','m',this.value)">
+                                    <option value="R" ${r.m==='R'?'selected':''}>右 (R)</option>
+                                    <option value="L" ${r.m==='L'?'selected':''}>左 (L)</option>
+                                </select></span>
+                                <span>进: <input type="text" maxlength="3" value="${r.next}" onchange="updateRule('${s}','${sym}','next',this.value.toUpperCase())"></span>
                             </div>
                         </td>
                     `;
@@ -210,8 +231,9 @@
         `).join('');
     }
 
+    // --- 基础控制与存储 ---
     function updateRule(s, sym, field, val) {
-        rules[s][sym][field] = val.toUpperCase();
+        rules[s][sym][field] = val;
         saveToLocal();
     }
 
@@ -231,85 +253,68 @@
         saveToLocal();
     }
 
-    // --- 核心逻辑 ---
+    function saveToLocal() { localStorage.setItem('tm_data_v2_2', JSON.stringify({ states, rules })); }
+    function loadFromLocal() {
+        const saved = localStorage.getItem('tm_data_v2_2');
+        if (saved) {
+            const data = JSON.parse(saved);
+            states = data.states;
+            rules = data.rules;
+        } else {
+            loadTemplate("BB4 (Busy Beaver)");
+        }
+    }
+
+    // --- 运行逻辑 ---
     function resetMachine() {
         pause();
         tape = {};
         headPos = 0;
         steps = 0;
         currentState = states[0] || 'A';
-        
-        // 重置画布：高 = 纸带范围 * BOX, 宽 = 初始宽度
         canvas.height = (TAPE_LIMIT * 2) * BOX;
         canvas.width = 1000;
         ctx.fillStyle = '#111';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
         updateUI();
     }
 
     function step() {
         if (currentState === 'H' || currentState === 'HALT') return;
-        
         const curSym = tape[headPos] || '0';
         const rule = rules[currentState] ? rules[currentState][curSym] : null;
 
-        // UI 反馈：高亮当前行/格
         document.querySelectorAll('.rule-cell').forEach(c => c.classList.remove('rule-active'));
         const cell = document.getElementById(`td-${currentState}-${curSym}`);
         if(cell) cell.classList.add('rule-active');
 
-        if (!rule) {
-            currentState = 'H';
-            updateUI();
-            return;
-        }
+        if (!rule) { currentState = 'H'; updateUI(); return; }
 
-        // 记录历史
         drawHistory();
-
-        // 逻辑转换
         tape[headPos] = rule.w;
         if (rule.m === 'R') headPos++; else headPos--;
         currentState = rule.next;
         steps++;
-
         updateUI();
     }
 
-    // --- 可视化渲染 ---
     function updateUI() {
         document.getElementById('displayState').textContent = currentState;
         document.getElementById('displaySteps').textContent = steps;
-        document.getElementById('headStateLabel').textContent = "State: " + currentState;
-
+        document.getElementById('headStateLabel').textContent = "状态: " + currentState;
         const track = document.getElementById('tapeTrack');
         track.innerHTML = '';
-        
-        const viewRange = 15; // 视觉渲染半径
-        for (let i = headPos - viewRange; i <= headPos + viewRange; i++) {
+        const range = 15;
+        for (let i = headPos - range; i <= headPos + range; i++) {
             const div = document.createElement('div');
             div.className = 'tape-cell';
             div.textContent = tape[i] || '0';
             track.appendChild(div);
         }
-
-        /** 
-         * 修复对准逻辑：
-         * 我们渲染了 (2*viewRange + 1) 个格子。
-         * 中心格（即 headPos）左侧有 viewRange 个格子。
-         * 每个格子 50px，所以 headPos 格子的左边缘距离 track 起始位置是 viewRange * 50px。
-         * 为了让 headPos 的 *中心* 对准 track 容器的中心：
-         * 偏移量 = -(viewRange * 50) + (50 / 2) - 0 = ... 简化后直接设为 0。
-         * 实际上，因为容器用了 flex justify-center，我们只需要确保渲染的格子以 headPos 为中心对称即可。
-         */
-        track.style.transform = `translateX(0px)`; 
     }
 
     function drawHistory() {
         const x = steps * BOX;
-        
-        // 动态扩充画布宽度
         if (x >= canvas.width - 20) {
             const temp = ctx.getImageData(0, 0, canvas.width, canvas.height);
             canvas.width += 800;
@@ -317,38 +322,24 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.putImageData(temp, 0, 0);
         }
-
-        // 渲染一纵列纸带
         for (let offset = -TAPE_LIMIT; offset < TAPE_LIMIT; offset++) {
             const val = tape[offset] || '0';
             const y = (offset + TAPE_LIMIT) * BOX;
-            
             ctx.fillStyle = (val === '1') ? '#fff' : '#222';
             ctx.fillRect(x, y, BOX - 1, BOX - 1);
-
             if (offset === headPos) {
                 ctx.fillStyle = '#ff5722';
                 ctx.fillRect(x, y, BOX - 1, BOX - 1);
             }
         }
-        
-        // 自动跟随滚动
         const wrapper = document.getElementById('historyWrapper');
         if (isRunning && steps % 5 === 0) {
             wrapper.scrollLeft = x - 200;
-            // 如果读写头跑远了，自动纵向滚动
             const currentY = (headPos + TAPE_LIMIT) * BOX;
             if (currentY < wrapper.scrollTop || currentY > wrapper.scrollTop + wrapper.clientHeight) {
                 wrapper.scrollTop = currentY - wrapper.clientHeight / 2;
             }
         }
-    }
-
-    function exportHistory() {
-        const link = document.createElement('a');
-        link.download = `tm_history_step_${steps}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
     }
 
     function togglePlay() {
@@ -360,9 +351,7 @@
                 step();
                 if (currentState !== 'H' && isRunning) {
                     timer = setTimeout(run, 1010 - document.getElementById('speedRange').value);
-                } else {
-                    pause();
-                }
+                } else { pause(); }
             };
             run();
         }
@@ -372,6 +361,13 @@
         isRunning = false;
         clearTimeout(timer);
         document.getElementById('btnPlay').textContent = '播放';
+    }
+
+    function exportHistory() {
+        const link = document.createElement('a');
+        link.download = `turing_machine_history.png`;
+        link.href = canvas.toDataURL();
+        link.click();
     }
 
     window.onload = init;
